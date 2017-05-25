@@ -11,7 +11,7 @@ from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras import regularizers, losses
 from keras.layers import Dropout, add, BatchNormalization
 from matplotlib import pyplot as plt
-import glob, time
+import glob, time, argparse
 
 
 filepath = "hist-MiniNtuple.h5"
@@ -67,7 +67,7 @@ def main():
     regularizer=regularizers.l2(alpha)
     #regularizer=None
     ##setup the neutral net
-    net = makeNetwork(X.shape[1], nodes, regularizer)
+    net = makeNetwork(X_train.shape[1], nodes, regularizer)
 
     ##setup the epoc
     callbacks = [
