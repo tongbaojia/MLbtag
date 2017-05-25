@@ -46,10 +46,15 @@ def options():
     return parser.parse_args()
 
 def transform_data():
+    print "Transforming and preparing training data!!"
     df = pd.read_hdf('testl_pd.h5', 'data')
+    ##pick different variables
+
     jf_df = df[[key for key in df.keys() if (key.startswith('jet_jf') and '_vtx_' not in key)]]
 
     jf_df_flat = pd.DataFrame({k: flatten(c) for k, c in jf_df.iteritems()})
+    #jf_df_flat = jf_df_flat[jf_df_flat['jet_sv1_efc'] > -99]
+
     flavor = flatten(df['jet_LabDr_HadF'])
     flavor_pids = np.unique(flavor)
 
@@ -74,6 +79,7 @@ def main():
     #transform_data()
 
     ##or just load the matricies
+    print "load the npy file directly"
     X_train = np.load("X_train.npy")
     X_test = np.load("X_test.npy")
     y_train = np.load("y_train.npy")
@@ -82,6 +88,8 @@ def main():
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
+
+    print X_train.size
 
     ##now start building the neuro net
     x = Input(shape=(22, ))
@@ -112,7 +120,7 @@ def main():
         EarlyStopping(verbose=True, patience=10, monitor='val_loss'), 
         # Always make sure that we're saving the model weights with the best val loss.
         ModelCheckpoint('model.h5', monitor='val_loss', verbose=True, save_best_only=True)]
-    history = net.fit(X_train, y_train, validation_split=0.2, epochs=10, verbose=2, callbacks=callbacks)
+    history = net.fit(X_train, y_train, validation_split=0.2, epochs=30, verbose=2, callbacks=callbacks)
 
     plt.plot(history.history['val_loss'], label='val_loss')
     plt.plot(history.history['loss'], label='loss')
@@ -122,20 +130,13 @@ def main():
 
 
     y_score = net.predict(X_test)
-    fpr = dict()
-    tpr = dict()
-    roc_auc = dict()
-    for i in range(0):
-        fpr[i], tpr[i], _ = roc_curve(y_test[:, i], y_score[:, i])
-        roc_auc[i] = auc(fpr[i], tpr[i])
+    fpr, tpr, thresholds = roc_curve(y_test, y_score, pos_label=2)
+    roc_auc = auc(fpr, tpr)
     # Compute micro-average ROC curve and ROC area
-    fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), y_score.ravel())
-    roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
-    plt.figure()
-    lw = 2
-    plt.plot(fpr[2], tpr[2], color='darkorange',
-             lw=lw, label='ROC curve (area = %0.2f)' % roc_auc[2])
-    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    #print fpr, tpr
+    
+    plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
+    plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')

@@ -10,7 +10,7 @@ filepath = '/atlas/local/BtagOptimizationNtuples/group.perf-flavtag.410000.Powhe
 rootfile = ROOT.TFile(filepath)
 roottree = rootfile.Get("bTagAntiKt4EMTopoJets")
 
-data = root2array(filepath, selection='njets>7')
+data = root2array(filepath, selection='jet_pt > 25000')
 df = pd.DataFrame(data)
 
 def root2pandas(files_path, tree_name, **kwargs):
