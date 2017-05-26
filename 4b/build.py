@@ -22,6 +22,11 @@ def options():
     parser.add_argument("--inputdir", default="")
     return parser.parse_args()
 
+def getHyperParameters():      
+    nodes=30      
+    alpha=0.01        
+    regularizer=regularizers.l2(alpha)        
+    return (nodes, regularizer)
 
 def makeNetwork(inputwidth, nodes, regularizer):
     # we define the input shape (i.e., how many input features) **without** the batch size
@@ -89,9 +94,7 @@ def main():
     #     plt.clf()
 
     ##setup the constants
-    nodes = 40
-    alpha = 0.01
-    regularizer=regularizers.l2(alpha)
+    nodes, regularizer = getHyperParameters()
     #regularizer=None
     ##setup the neutral net
     net = makeNetwork(X_train.shape[1], nodes, regularizer)
@@ -136,7 +139,7 @@ def main():
 
     ##make the roc curve
     print y_test, yhat_test
-    fpr, tpr, thresholds = roc_auc_score(y_test, yhat_test_round, pos_label=2)
+    fpr, tpr, thresholds = roc_auc_score(y_test, yhat_test_round)
     roc_auc = auc(fpr, tpr)
     #print fpr, tpr
     plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
