@@ -11,6 +11,8 @@ import time
 ##for more info, see here:
 ##https://github.com/tongbaojia/MakePlot/blob/master/TinyTree.h
 
+directory="/afs/cern.ch/work/b/btong/bbbb/MoriondAnalysis/Output/TEST/data_test/"
+
 ##conver to array
 def get_category(n0,n1):
     if n0 + n1 == 0: return 0
@@ -21,7 +23,8 @@ def get_category(n0,n1):
 def transform_data():
     print "Transforming and preparing training data!!"
 
-    filepath = "/gpfs/slac/atlas/fs1/u/btong/MLbtag/4b/hist-MiniNTuple.h5"
+    #filepath = directory+"hist-MiniNTuple.h5"
+    filepath = "/afs/cern.ch/user/b/btong/public/hist-MiniNTuple.h5"
     df = pd.read_hdf(filepath, 'data')
 
     #skim data to get only the two categories being studied and get equal statistics in each
@@ -39,9 +42,8 @@ def transform_data():
     print df_skim[:2]
 
     #make X matrix
-    X=df_skim[
-        ['j0_pt', 'j0_eta', 'j0_phi', 'j0_m','j0_nTrk','j0_trk0_pt','j0_trk0_eta','j0_trk0_phi','j0_trk0_m',
-         'j1_pt', 'j1_eta', 'j1_phi', 'j1_m','j1_nTrk','j1_trk0_pt','j1_trk0_eta','j1_trk0_phi','j1_trk0_m']].as_matrix()
+    inputs = ['j0_trk0_pt','j0_trk1_pt','j1_trk0_pt','j1_trk1_pt','j0_trkdr','j1_trkdr','j0_nTrk','j1_nTrk','detaHH']
+    X=df_skim[inputs].as_matrix()
     scaler = StandardScaler()
     X = scaler.fit_transform(X)
 
@@ -49,6 +51,8 @@ def transform_data():
     le = LabelEncoder()
     y = le.fit_transform(df_skim['category'])
 
+    np.save("X",X)
+    np.save("y",y)
     #split into training and testing samples
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.6)
     np.save("X_train", X_train)
@@ -58,8 +62,8 @@ def transform_data():
     
 
 def ntupleToh5():
-    filepath = "/gpfs/slac/atlas/fs1/u/btong/MLbtag/4b/hist-MiniNTuple.root"
-    data = root2array(filepath,treename="TinyTree",selection="Xhh>1.6 && j0_nTrk>1 && j1_nTrk>1 && Rhh<33")
+    filepath = directory+"hist-MiniNTuple.root"
+    data = root2array(filepath,treename="TinyTree",selection="Xhh>1.6 && j0_nTrk>1 && j1_nTrk>1 && Rhh<58")
     df   = pd.DataFrame(data)
 
     df['category'] = [ get_category(n0,n1) for (_,(n0,n1)) in df[['j0_nb','j1_nb']].iterrows()]

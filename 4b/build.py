@@ -49,6 +49,12 @@ def makeNetwork(inputwidth, nodes, regularizer):
     net.compile(optimizer='sgd', loss=losses.binary_crossentropy)
     return net
 
+def getHyperParameters():
+    nodes=30
+    alpha=0.01
+    regularizer=regularizers.l2(alpha)
+    return (nodes, regularizer)
+
 def main():
     '''here is where everything is setup, basic options of plots and direcotries, fits'''
     start_time = time.time()
@@ -62,10 +68,8 @@ def main():
     y_test = np.load("y_test.npy")
 
     ##setup the constants
-    nodes=30
-    alpha=0.01
-    regularizer=regularizers.l2(alpha)
-    #regularizer=None
+    nodes, regularizer = getHyperParameters()
+
     ##setup the neutral net
     net = makeNetwork(X_train.shape[1], nodes, regularizer)
 
@@ -79,11 +83,11 @@ def main():
 
     ##train
     history = net.fit(X_train, y_train, validation_split=0.2, epochs=300, verbose=1, callbacks=callbacks, batch_size=128)
-    plt.plot(history.history['val_loss'], label='val_loss')
-    plt.plot(history.history['loss'], label='loss')
-    plt.legend()
-    plt.savefig("loss.png")
-    plt.clf()
+    # plt.plot(history.history['val_loss'], label='val_loss')
+    # plt.plot(history.history['loss'], label='loss')
+    # plt.legend()
+    # plt.savefig("loss.png")
+    # plt.clf()
 
     #plt.show()
     #raw_input()
@@ -100,27 +104,27 @@ def main():
     print "(train) Fraction Correct =",np.average(correct_train),"+/-",correct_train.size**-0.5
     print " (test) Fraction Correct =",np.average(correct_test),"+/-",correct_test.size**-0.5
 
-    _, bins, _ = plt.hist(y_test, histtype='step', label=r'$y_{\mathsf{true}}$')
-    plt.hist(yhat_test,   bins=bins,   histtype='step', label=r'$\hat{y}$')
-    plt.hist(correct_test,bins=bins, histtype='step', label=r'NXOR')
-    plt.legend()
-    plt.savefig("output.png")
-    plt.clf()
+    # _, bins, _ = plt.hist(y_test, histtype='step', label=r'$y_{\mathsf{true}}$')
+    # plt.hist(yhat_test,   bins=bins,   histtype='step', label=r'$\hat{y}$')
+    # plt.hist(correct_test,bins=bins, histtype='step', label=r'NXOR')
+    # plt.legend()
+    # plt.savefig("output.png")
+    # plt.clf()
 
     ##make the roc curve
-    fpr, tpr, thresholds = roc_curve(y_test, yhat_test, pos_label=2)
-    roc_auc = auc(fpr, tpr)
+    #fpr, tpr, thresholds = roc_curve(y_test, yhat_test, pos_label=2)
+    #roc_auc = auc(fpr, tpr)
     #print fpr, tpr
-    plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
-    plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('Receiver operating characteristic example')
-    plt.legend(loc="lower right")
-    plt.savefig("roc.png")
-    plt.clf()
+    # plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
+    # plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+    # plt.xlim([0.0, 1.0])
+    # plt.ylim([0.0, 1.05])
+    # plt.xlabel('False Positive Rate')
+    # plt.ylabel('True Positive Rate')
+    # plt.title('Receiver operating characteristic example')
+    # plt.legend(loc="lower right")
+    # plt.savefig("roc.png")
+    # plt.clf()
 
     #plt.show()
     #raw_input()
