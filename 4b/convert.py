@@ -14,14 +14,16 @@ import time
 ##conver to array
 def get_category(n0,n1):
     if n0 + n1 == 0: return 0
+    if n0 + n1 == 1: return 1
     if n0==1 and n1==1: return 2
+    if n0 + n1 == 3: return 3
     if n0==2 and n1==2: return 4
     return -1
 
 def transform_data():
     print "Transforming and preparing training data!!"
 
-    filepath = "/gpfs/slac/atlas/fs1/u/btong/MLbtag/4b/hist-MiniNTuple.h5"
+    filepath = "hist-MiniNTuple.h5"
     df = pd.read_hdf(filepath, 'data')
 
     #skim data to get only the two categories being studied and get equal statistics in each
@@ -30,6 +32,7 @@ def transform_data():
 
     df_0b = df[is0b]
     df_2b = df[is2b]
+    #print df_2b
 
     ##make the 0b and the 2b have the same number of events
     frames = [df_0b[:df_2b.shape[0]],df_2b] 
@@ -40,8 +43,20 @@ def transform_data():
 
     #make X matrix
     X=df_skim[
-        ['j0_pt', 'j0_eta', 'j0_phi', 'j0_m','j0_nTrk','j0_trk0_pt','j0_trk0_eta','j0_trk0_phi','j0_trk0_m',
-         'j1_pt', 'j1_eta', 'j1_phi', 'j1_m','j1_nTrk','j1_trk0_pt','j1_trk0_eta','j1_trk0_phi','j1_trk0_m']].as_matrix()
+        [
+        #'mHH',
+        #'j0_pt', 
+        #'j0_eta', 'j0_phi', 
+        #'j0_m','j0_nTrk',
+        'j0_trkdr', 'j0_trk0_pt', 'j0_trk1_pt', #'j0_trk0_m', 'j0_trk0_eta','j0_trk0_phi',
+        #'j1_pt', 
+        #'j1_m','j1_nTrk',
+        #'j1_eta', 'j1_phi', 
+        'j1_trkdr', 'j1_trk0_pt', 'j1_trk1_pt', #'j1_trk0_eta','j1_trk0_phi','j1_trk0_m',
+        'j0_trk0_Mv2',
+        #'j0_trk0_Mv2', 'j0_trk1_Mv2', 'j1_trk0_Mv2', 'j1_trk1_Mv2', 
+         ]].as_matrix()
+
     scaler = StandardScaler()
     X = scaler.fit_transform(X)
 
@@ -58,8 +73,9 @@ def transform_data():
     
 
 def ntupleToh5():
-    filepath = "/gpfs/slac/atlas/fs1/u/btong/MLbtag/4b/hist-MiniNTuple.root"
-    data = root2array(filepath,treename="TinyTree",selection="Xhh>1.6 && j0_nTrk>1 && j1_nTrk>1 && Rhh<33")
+    print "conver to h5"
+    filepath = "/afs/cern.ch/work/b/btong/bbbb/MoriondAnalysis/Output/TEST/data_test/hist-MiniNTuple.root"
+    data = root2array(filepath,treename="TinyTree",selection="Xhh>1.6 && j0_nTrk>1 && j1_nTrk>1 && Rhh<58")
     df   = pd.DataFrame(data)
 
     df['category'] = [ get_category(n0,n1) for (_,(n0,n1)) in df[['j0_nb','j1_nb']].iterrows()]

@@ -11,6 +11,7 @@ from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras import regularizers, losses
 from keras.layers import Dropout, add, BatchNormalization
 from matplotlib import pyplot as plt
+from sklearn.metrics import roc_curve, auc
 import glob, time, argparse
 
 
@@ -27,14 +28,13 @@ def makeNetwork(inputwidth, nodes, regularizer):
     x = Input(shape=(inputwidth, ))
 
     # all Keras Ops look like z = f(z) (like functional programming)
-    h = Dense(nodes,kernel_regularizer=regularizer)(x)
+    h = Dense(nodes, kernel_regularizer=regularizer)(x)
     h = Activation('relu')(h)
     h = BatchNormalization()(h)
 
-    h = Dense(nodes,kernel_regularizer=regularizer)(h)
-    #h = Dropout(0.1)(h)
-    h = BatchNormalization()(h)
+    h = Dense(nodes, kernel_regularizer=regularizer)(h)
     h = Activation('relu')(h)
+    h = BatchNormalization()(h)
 
     h = Dense(nodes,kernel_regularizer=regularizer)(h)
     h = Activation('relu')(h)
@@ -46,7 +46,7 @@ def makeNetwork(inputwidth, nodes, regularizer):
 
     net = Model(x, y)
 
-    net.compile(optimizer='sgd', loss=losses.binary_crossentropy)
+    net.compile(optimizer='adam', loss=losses.binary_crossentropy)
     return net
 
 def main():
@@ -62,8 +62,8 @@ def main():
     y_test = np.load("y_test.npy")
 
     ##setup the constants
-    nodes=30
-    alpha=0.01
+    nodes = 40
+    alpha = 0.01
     regularizer=regularizers.l2(alpha)
     #regularizer=None
     ##setup the neutral net
@@ -121,7 +121,6 @@ def main():
     plt.legend(loc="lower right")
     plt.savefig("roc.png")
     plt.clf()
-
     #plt.show()
     #raw_input()
 
