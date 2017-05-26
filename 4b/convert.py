@@ -11,19 +11,20 @@ import time
 ##for more info, see here:
 ##https://github.com/tongbaojia/MakePlot/blob/master/TinyTree.h
 
+directory="/afs/cern.ch/work/b/btong/bbbb/MoriondAnalysis/Output/TEST/data_test/"
+
 ##conver to array
 def get_category(n0,n1):
     if n0 + n1 == 0: return 0
-    if n0 + n1 == 1: return 1
     if n0==1 and n1==1: return 2
-    if n0 + n1 == 3: return 3
     if n0==2 and n1==2: return 4
     return -1
 
 def transform_data():
     print "Transforming and preparing training data!!"
 
-    filepath = "hist-MiniNTuple.h5"
+    #filepath = directory+"hist-MiniNTuple.h5"
+    filepath = "/afs/cern.ch/user/b/btong/public/hist-MiniNTuple.h5"
     df = pd.read_hdf(filepath, 'data')
 
     #skim data to get only the two categories being studied and get equal statistics in each
@@ -32,7 +33,6 @@ def transform_data():
 
     df_0b = df[is0b]
     df_2b = df[is2b]
-    #print df_2b
 
     ##clean data a bit
     df_2b = df_2b[df_2b['j0_trk0_pt'] < 500]
@@ -48,35 +48,9 @@ def transform_data():
     print df_skim[:2]
 
     #make X matrix
-    X=df_skim[
-        [
-        #'mHH',
-        #'j0_pt', 
-        #'j0_eta', 'j0_phi', 
-        #'j0_m','j0_nTrk',
-        'j0_trkdr', 'j0_trk0_pt', 'j0_trk1_pt', #'j0_trk0_m', 'j0_trk0_eta','j0_trk0_phi',
-        #'j1_pt', 
-        #'j1_m','j1_nTrk',
-        #'j1_eta', 'j1_phi', 
-        'j1_trkdr', 'j1_trk0_pt', 'j1_trk1_pt', #'j1_trk0_eta','j1_trk0_phi','j1_trk0_m',
-        'j0_trk0_Mv2',
-        #'j0_trk0_Mv2', 'j0_trk1_Mv2', 'j1_trk0_Mv2', 'j1_trk1_Mv2', 
-         ]].as_matrix()
-
-
-    Z=df_skim[
-        [
-        #'mHH',
-        #'j0_pt', 
-        #'j0_eta', 'j0_phi', 
-        #'j0_m','j0_nTrk',
-        'j0_trkdr', 'j0_trk0_pt', 'j0_trk1_pt', #'j0_trk0_m', 'j0_trk0_eta','j0_trk0_phi',
-        #'j1_pt', 
-        #'j1_m','j1_nTrk',
-        #'j1_eta', 'j1_phi', 
-        'j1_trkdr', 'j1_trk0_pt', 'j1_trk1_pt', #'j1_trk0_eta','j1_trk0_phi','j1_trk0_m',
-         ]].as_matrix()
-
+    inputs = ['j0_trk0_pt','j0_trk1_pt','j1_trk0_pt','j1_trk1_pt','j0_trkdr','j1_trkdr','j0_nTrk','j1_nTrk','detaHH']
+    Z=df_skim[inputs.append('j0_trk0_Mv2')].as_matrix()
+    X=df_skim[inputs].as_matrix()
     scaler = StandardScaler()
     X = scaler.fit_transform(X)
     Z = scaler.fit_transform(Z)
@@ -85,6 +59,8 @@ def transform_data():
     le = LabelEncoder()
     y = le.fit_transform(df_skim['category'])
 
+    np.save("X",X)
+    np.save("y",y)
     #split into training and testing samples
     X_train, X_test, y_train, y_test, Z_train, Z_test = train_test_split(X, y, Z, train_size=0.6)
     np.save("X_train", X_train)
@@ -96,8 +72,7 @@ def transform_data():
     
 
 def ntupleToh5():
-    print "conver to h5"
-    filepath = "/afs/cern.ch/work/b/btong/bbbb/MoriondAnalysis/Output/TEST/data_test/hist-MiniNTuple.root"
+    filepath = directory+"hist-MiniNTuple.root"
     data = root2array(filepath,treename="TinyTree",selection="Xhh>1.6 && j0_nTrk>1 && j1_nTrk>1 && Rhh<58")
     df   = pd.DataFrame(data)
 
