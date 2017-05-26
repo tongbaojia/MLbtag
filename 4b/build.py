@@ -11,6 +11,7 @@ from keras.callbacks import ModelCheckpoint, EarlyStopping
 from keras import regularizers, losses
 from keras.layers import Dropout, add, BatchNormalization
 from matplotlib import pyplot as plt
+from sklearn.metrics import roc_curve, auc, roc_auc_score
 import glob, time, argparse
 
 
@@ -27,14 +28,13 @@ def makeNetwork(inputwidth, nodes, regularizer):
     x = Input(shape=(inputwidth, ))
 
     # all Keras Ops look like z = f(z) (like functional programming)
-    h = Dense(nodes,kernel_regularizer=regularizer)(x)
+    h = Dense(nodes, kernel_regularizer=regularizer)(x)
     h = Activation('relu')(h)
     h = BatchNormalization()(h)
 
-    h = Dense(nodes,kernel_regularizer=regularizer)(h)
-    #h = Dropout(0.1)(h)
-    h = BatchNormalization()(h)
+    h = Dense(nodes, kernel_regularizer=regularizer)(h)
     h = Activation('relu')(h)
+    h = BatchNormalization()(h)
 
     h = Dense(nodes,kernel_regularizer=regularizer)(h)
     h = Activation('relu')(h)
@@ -46,14 +46,8 @@ def makeNetwork(inputwidth, nodes, regularizer):
 
     net = Model(input=x, output=y)
 
-    net.compile(optimizer='sgd', loss=losses.binary_crossentropy)
+    net.compile(optimizer='adam', loss=losses.binary_crossentropy)
     return net
-
-def getHyperParameters():
-    nodes=30
-    alpha=0.01
-    regularizer=regularizers.l2(alpha)
-    return (nodes, regularizer)
 
 def main():
     '''here is where everything is setup, basic options of plots and direcotries, fits'''
@@ -62,12 +56,12 @@ def main():
 
     ##or just load the matricies
     print "load the npy file directly"
-    X_train = np.load("X_train.npy")
-    X_test  = np.load("X_test.npy")
-    y_train = np.load("y_train.npy")
-    y_test  = np.load("y_test.npy")
-    Z_train = np.load("Z_train.npy")
-    Z_test  = np.load("Z_test.npy")
+    X_train = np.load("X_sig_train.npy")
+    X_test  = np.load("X_sig_test.npy")
+    y_train = np.load("y_sig_train.npy")
+    y_test  = np.load("y_sig_test.npy")
+    Z_train = np.load("Z_sig_train.npy")
+    Z_test  = np.load("Z_sig_test.npy")
 
     ##get the list
     lst_0b = []
@@ -80,22 +74,25 @@ def main():
 
 
     ##check the variables
-    for i in range(X_train.shape[1]):
+    inputs = ['j0_trk0_pt','j0_trk1_pt','j1_trk0_pt','j1_trk1_pt','j0_trkdr','j1_trkdr','j0_nTrk','j1_nTrk','detaHH','mHH', 'j1_m', 'j0_m']
 
-        X_0b = X_train[:, i][lst_0b]
-        X_2b = X_train[:, i][lst_2b]
+    # ##seperate the two training
+    # X_0b = X_train[lst_0b, :]
+    # X_2b = X_train[lst_2b, :]
 
-        bins = np.linspace(-5, 5, 100)
-
-        plt.hist(X_0b, bins, alpha=0.5, label=str(i) + "_0b")
-        plt.hist(X_2b, bins, alpha=0.5, label=str(i) + "_2b")
-        plt.legend()
-        plt.savefig(str(i) + "_var" + ".png")
-        plt.clf()
+    # for i in range(X_train.shape[1]):
+    #     bins = np.linspace(-5, 5, 100)
+    #     plt.hist(X_0b[:, i], bins, alpha=0.5, label=inputs[i] + "_0b")
+    #     plt.hist(X_2b[:, i], bins, alpha=0.5, label=inputs[i] + "_2b")
+    #     plt.legend()
+    #     plt.savefig(inputs[i] + "_var" + ".png")
+    #     plt.clf()
 
     ##setup the constants
-    nodes, regularizer = getHyperParameters()
-
+    nodes = 40
+    alpha = 0.01
+    regularizer=regularizers.l2(alpha)
+    #regularizer=None
     ##setup the neutral net
     net = makeNetwork(X_train.shape[1], nodes, regularizer)
 
@@ -108,12 +105,12 @@ def main():
 
 
     ##train
-    history = net.fit(X_train, y_train, validation_split=0.2, epochs=300, verbose=1, callbacks=callbacks, batch_size=128)
-    # plt.plot(history.history['val_loss'], label='val_loss')
-    # plt.plot(history.history['loss'], label='loss')
-    # plt.legend()
-    # plt.savefig("loss.png")
-    # plt.clf()
+    history = net.fit(X_train, y_train, validation_split=0.2, epochs=1, verbose=1, callbacks=callbacks, batch_size=128)
+    plt.plot(history.history['val_loss'], label='val_loss')
+    plt.plot(history.history['loss'], label='loss')
+    plt.legend()
+    plt.savefig("loss.png")
+    plt.clf()
 
     #plt.show()
     #raw_input()
@@ -130,30 +127,45 @@ def main():
     print "(train) Fraction Correct =",np.average(correct_train),"+/-",correct_train.size**-0.5
     print " (test) Fraction Correct =",np.average(correct_test),"+/-",correct_test.size**-0.5
 
-    # _, bins, _ = plt.hist(y_test, histtype='step', label=r'$y_{\mathsf{true}}$')
-    # plt.hist(yhat_test,   bins=bins,   histtype='step', label=r'$\hat{y}$')
-    # plt.hist(correct_test,bins=bins, histtype='step', label=r'NXOR')
-    # plt.legend()
-    # plt.savefig("output.png")
-    # plt.clf()
+    _, bins, _ = plt.hist(y_test, histtype='step', label=r'$y_{\mathsf{true}}$')
+    plt.hist(yhat_test,   bins=bins,   histtype='step', label=r'$\hat{y}$')
+    plt.hist(correct_test,bins=bins, histtype='step', label=r'NXOR')
+    plt.legend()
+    plt.savefig("output.png")
+    plt.clf()
 
     ##make the roc curve
-    #fpr, tpr, thresholds = roc_curve(y_test, yhat_test, pos_label=2)
-    #roc_auc = auc(fpr, tpr)
+    print y_test, yhat_test
+    fpr, tpr, thresholds = roc_auc_score(y_test, yhat_test_round, pos_label=2)
+    roc_auc = auc(fpr, tpr)
     #print fpr, tpr
-    # plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
-    # plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
-    # plt.xlim([0.0, 1.0])
-    # plt.ylim([0.0, 1.05])
-    # plt.xlabel('False Positive Rate')
-    # plt.ylabel('True Positive Rate')
-    # plt.title('Receiver operating characteristic example')
-    # plt.legend(loc="lower right")
-    # plt.savefig("roc.png")
-    # plt.clf()
-
+    plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
+    plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver operating characteristic example')
+    plt.legend(loc="lower right")
+    plt.savefig("roc.png")
+    plt.clf()
     #plt.show()
     #raw_input()
+
+    ###check the weights
+    # yhat_0b = net.predict(X_0b)
+    # yhat_2b = net.predict(X_2b)
+
+    # fig, ax = plt.subplots()
+    # bins = np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+    # plt.hist(yhat_0b, bins=bins, histtype='step', label=r'$\hat{y}_{0}$', normed=True)
+    # plt.hist(yhat_2b, bins=bins, histtype='step', label=r'$\hat{y}_{1}$', normed=True)
+    # plt.legend()
+    # ax.set_xlim([0,1])
+    # ax.set_xlabel("NN Score")
+    # ax.set_ylabel("Arb. Units")
+    # plt.savefig("separation.png")
+    # plt.clf()
 
 
 
