@@ -61,12 +61,12 @@ def main():
 
     ##or just load the matricies
     print "load the npy file directly"
-    X_train = np.load("X_train.npy")
-    X_test  = np.load("X_test.npy")
-    y_train = np.load("y_train.npy")
-    y_test  = np.load("y_test.npy")
-    Z_train = np.load("Z_train.npy")
-    Z_test  = np.load("Z_test.npy")
+    X_train = np.load("X_sig_train.npy")
+    X_test  = np.load("X_sig_test.npy")
+    y_train = np.load("y_sig_train.npy")
+    y_test  = np.load("y_sig_test.npy")
+    Z_train = np.load("Z_sig_train.npy")
+    Z_test  = np.load("Z_sig_test.npy")
 
     ##get the list
     lst_0b = []
@@ -93,29 +93,29 @@ def main():
     #     plt.savefig(inputs[i] + "_var" + ".png")
     #     plt.clf()
 
-    ##setup the constants
-    nodes, regularizer = getHyperParameters()
-    #regularizer=None
-    ##setup the neutral net
+    # ##setup the constants
+    # nodes, regularizer = getHyperParameters()
+    # #regularizer=None
+    # ##setup the neutral net
 
-    ##setup the epoc
-    callbacks = [
-        # if we don't have a decrease of the loss for 10 epochs, terminate training.
-        EarlyStopping(verbose=True, patience=10, monitor='val_loss'), 
-        # Always make sure that we're saving the model weights with the best val loss.
-        ModelCheckpoint('model.h5', monitor='val_loss', verbose=True, save_best_only=True)]
-
-
-    net = makeNetwork(X_train.shape[1], nodes, regularizer)
+    # ##setup the epoc
+    # callbacks = [
+    #     # if we don't have a decrease of the loss for 10 epochs, terminate training.
+    #     EarlyStopping(verbose=True, patience=10, monitor='val_loss'), 
+    #     # Always make sure that we're saving the model weights with the best val loss.
+    #     ModelCheckpoint('model.h5', monitor='val_loss', verbose=True, save_best_only=True)]
 
 
-    ##train
-    history = net.fit(X_train, y_train, validation_split=0.2, epochs=40, verbose=1, callbacks=callbacks, batch_size=128)
-    plt.plot(history.history['val_loss'], label='val_loss')
-    plt.plot(history.history['loss'], label='loss')
-    plt.legend()
-    plt.savefig("loss.png")
-    plt.clf()
+    # net = makeNetwork(X_train.shape[1], nodes, regularizer)
+
+
+    # ##train
+    # history = net.fit(X_train, y_train, validation_split=0.2, epochs=40, verbose=1, callbacks=callbacks, batch_size=128)
+    # plt.plot(history.history['val_loss'], label='val_loss')
+    # plt.plot(history.history['loss'], label='loss')
+    # plt.legend()
+    # plt.savefig("loss.png")
+    # plt.clf()
 
     #plt.show()
     #raw_input()
@@ -144,20 +144,20 @@ def main():
 
 
 
-    # net2 = makeNetwork(3, nodes, regularizer)
+    # net2 = makeNetwork(1, nodes, regularizer)
     # callbacks2 = [
     #     # if we don't have a decrease of the loss for 10 epochs, terminate training.
     #     EarlyStopping(verbose=True, patience=10, monitor='val_loss'), 
     #     # Always make sure that we're saving the model weights with the best val loss.
     #     ModelCheckpoint('model2.h5', monitor='val_loss', verbose=True, save_best_only=True)]
     # ##train
-    # history2   = net2.fit(X_train[:, -3:], y_train, validation_split=0.2, epochs=40, verbose=1, callbacks=callbacks2, batch_size=128)
+    # history2   = net2.fit(X_train[:, -3], y_train, validation_split=0.2, epochs=40, verbose=1, callbacks=callbacks2, batch_size=128)
     ##loead the neutral net
     nodes, regularizer = getHyperParameters()
-    net2 = makeNetwork(3, nodes, regularizer)
+    net2 = makeNetwork(1, nodes, regularizer)
     net2.load_weights("model2.h5")
 
-    yhat_test2 = net2.predict(X_test[:, -3:])
+    yhat_test2 = net2.predict(X_test[:, -3])
     ##make the roc curve
     #print y_test, yhat_test
     fpr, tpr, thresholds = roc_curve(y_test, yhat_test)
