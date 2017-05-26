@@ -9,8 +9,11 @@ from keras.models import Model
 from keras.utils import plot_model
 from keras import regularizers, losses
 from keras.layers import Dropout, add, BatchNormalization
-from matplotlib import pyplot as plt
-plt.ioff()
+import matplotlib
+matplotlib.use('Agg')
+from matplotlib import pyplot
+
+pyplot.ioff()
 
 import glob, time, argparse
 from build import makeNetwork, getHyperParameters
@@ -28,6 +31,22 @@ def splitXy(X,y):
     return (X0,X1)
 
 
+def interpolate(x,X,Y): #return interpolated y for desired x given the scatter plot values X,Y
+    if x<X[ 0]: return Y[ 0]
+    if x>X[-1]: return Y[-1]
+
+    #find X on either side of x
+    bin = 0
+    for i in range(len(X)):
+        if x<X[i]:
+            bin = i-1
+            break
+    
+    #return interpolated value
+    m = (Y[bin+1]-Y[bin])/(X[bin+1]-X[bin])
+    y = m*(x-X[bin])+Y[bin]
+    return y
+
 def main():
     X = np.load("X.npy")
     y = np.load("y.npy")
@@ -44,16 +63,32 @@ def main():
     yhat0 = net.predict(X0)
     yhat1 = net.predict(X1)
 
-    fig, ax = plt.subplots()
+    y = [yhat1,yhat0]
+
+    #fig, ax = pyplot.subplots()
+    fig, (ax1, ax2) = pyplot.subplots(nrows=2)
     bins = np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-    plt.hist(yhat0, bins=bins, histtype='step', label=r'$\hat{y}_{0}$', normed=True)
-    plt.hist(yhat1, bins=bins, histtype='step', label=r'$\hat{y}_{1}$', normed=True)
-    plt.legend()
-    ax.set_xlim([0,1])
-    ax.set_xlabel("NN Score")
-    ax.set_ylabel("Arb. Units")
-    plt.savefig("separation.png")
-    plt.clf()
+    ns, _, patches = ax1.hist(y, bins=bins, histtype='step', label=[r'$\hat{y}_{1}$', r'$\hat{y}_{0}$'], normed=True)
+    #ax1.hist(yhat1, bins=bins, histtype='step', label=r'$\hat{y}_{1}$', normed=True)
+    #ax.set_xlim([0,1])
+    ax2.set_xlabel("NN Score")
+    ax1.set_ylabel("Arb. Units")
+
+    binCenters = [(bins[i]+bins[i+1])/2 for i in range(len(bins)-1)]
+    ratio = [ns[0][i]/ns[1][i] if ns[1][i]>0 else 0 for i in range(len(bins)-1)]
+    print ratio
+    ax2.scatter(binCenters,ratio)
+    #ax2.hist(ratio, bins=bins)
+
+    weights = [interpolate(yhat0[i][0],binCenters,ratio) for i in range(yhat0.size)]
+    #print weights
+    ax1.hist(yhat0,bins=bins, histtype='step', label=r'$\hat{y}_{0} weighted$', normed=True, weights=weights)
+
+    ax1.legend()
+
+    fig.savefig("separation.png")
+    fig.clf()
+
 
 
 
