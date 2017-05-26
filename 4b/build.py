@@ -44,7 +44,7 @@ def makeNetwork(inputwidth, nodes, regularizer):
     y = Dense(1)(h)
     y = Activation('sigmoid')(y)
 
-    net = Model(x, y)
+    net = Model(input=x, output=y)
 
     net.compile(optimizer='adam', loss=losses.binary_crossentropy)
     return net
@@ -57,9 +57,35 @@ def main():
     ##or just load the matricies
     print "load the npy file directly"
     X_train = np.load("X_train.npy")
-    X_test = np.load("X_test.npy")
+    X_test  = np.load("X_test.npy")
     y_train = np.load("y_train.npy")
-    y_test = np.load("y_test.npy")
+    y_test  = np.load("y_test.npy")
+    Z_train = np.load("Z_train.npy")
+    Z_test  = np.load("Z_test.npy")
+
+    ##get the list
+    lst_0b = []
+    lst_2b = []
+    for k in range(y_train.shape[0]):
+        if y_train[k] == 0:
+            lst_0b.append(k)
+        else:
+            lst_2b.append(k)
+
+
+    ##check the variables
+    for i in range(X_train.shape[1]):
+
+        X_0b = X_train[:, i][lst_0b]
+        X_2b = X_train[:, i][lst_2b]
+
+        bins = np.linspace(-5, 5, 100)
+
+        plt.hist(X_0b, bins, alpha=0.5, label=str(i) + "_0b")
+        plt.hist(X_2b, bins, alpha=0.5, label=str(i) + "_2b")
+        plt.legend()
+        plt.savefig(str(i) + "_var" + ".png")
+        plt.clf()
 
     ##setup the constants
     nodes = 40
