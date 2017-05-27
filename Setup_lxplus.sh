@@ -1,0 +1,1 @@
+source /afs/cern.ch/work/m/mkagan/public/miniconda3/bin/activate testenv
