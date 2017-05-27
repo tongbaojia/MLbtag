@@ -13,6 +13,7 @@ from keras.layers import Dropout, add, BatchNormalization
 from matplotlib import pyplot as plt
 from sklearn.metrics import roc_curve, auc, roc_auc_score
 import glob, time, argparse
+import ROOT
 
 
 filepath = "hist-MiniNtuple.h5"
@@ -93,10 +94,10 @@ def main():
     #     plt.savefig(inputs[i] + "_var" + ".png")
     #     plt.clf()
 
-    # ##setup the constants
-    # nodes, regularizer = getHyperParameters()
-    # #regularizer=None
-    # ##setup the neutral net
+    ##setup the constants
+    nodes, regularizer = getHyperParameters()
+    #regularizer=None
+    ##setup the neutral net
 
     # ##setup the epoc
     # callbacks = [
@@ -120,13 +121,13 @@ def main():
     #plt.show()
     #raw_input()
 
-    nodes, regularizer = getHyperParameters()
-    net = makeNetwork(X_train.shape[1], nodes, regularizer)
-    net.load_weights("model.h5")
+    # nodes, regularizer = getHyperParameters()
+    # net = makeNetwork(X_train.shape[1], nodes, regularizer)
+    # net.load_weights("model.h5")
 
-    yhat_test = net.predict(X_test)
-    yhat_test_round = np.array([1 if x>0.5 else 0 for x in yhat_test])
-    correct_test = np.logical_not(np.logical_xor(y_test,yhat_test_round))
+    # yhat_test = net.predict(X_test)
+    # yhat_test_round = np.array([1 if x>0.5 else 0 for x in yhat_test])
+    # correct_test = np.logical_not(np.logical_xor(y_test,yhat_test_round))
 
     # yhat_train = net.predict(X_train)
     # yhat_train_round = np.array([1 if x>0.5 else 0 for x in yhat_train])
@@ -144,23 +145,23 @@ def main():
 
 
 
-    # net2 = makeNetwork(1, nodes, regularizer)
+    # net2 = makeNetwork(2, nodes, regularizer)
     # callbacks2 = [
     #     # if we don't have a decrease of the loss for 10 epochs, terminate training.
     #     EarlyStopping(verbose=True, patience=10, monitor='val_loss'), 
     #     # Always make sure that we're saving the model weights with the best val loss.
     #     ModelCheckpoint('model2.h5', monitor='val_loss', verbose=True, save_best_only=True)]
     # ##train
-    # history2   = net2.fit(X_train[:, -3], y_train, validation_split=0.2, epochs=40, verbose=1, callbacks=callbacks2, batch_size=128)
-    ##loead the neutral net
+    # history2   = net2.fit(X_train[:, -2:], y_train, validation_split=0.2, epochs=100, verbose=1, callbacks=callbacks2, batch_size=128)
+    ##or, load the neutral net
     nodes, regularizer = getHyperParameters()
-    net2 = makeNetwork(1, nodes, regularizer)
+    net2 = makeNetwork(2, nodes, regularizer)
     net2.load_weights("model2.h5")
 
-    yhat_test2 = net2.predict(X_test[:, -3])
+    yhat_test2 = net2.predict(X_test[:, -2:])
     ##make the roc curve
     #print y_test, yhat_test
-    fpr, tpr, thresholds = roc_curve(y_test, yhat_test)
+    #fpr, tpr, thresholds = roc_curve(y_test, yhat_test)
     fpr2, tpr2, thresholds2 = roc_curve(y_test, yhat_test2)
 
     ##cut based
@@ -179,10 +180,10 @@ def main():
     fpr3, tpr3, thresholds3 = roc_curve(y_test, yhat_test_cut)
 
     #print fpr, tpr, thresholds
-    roc_auc  = auc(fpr, tpr)
+    #roc_auc  = auc(fpr, tpr)
     roc_auc2 = auc(fpr2, tpr2)
     roc_auc3 = auc(fpr3, tpr3)
-    plt.plot(fpr, tpr, color='green',  lw=2, label='Full curve (area = %0.2f)' % roc_auc)
+    #plt.plot(fpr, tpr, color='green',  lw=2, label='Full curve (area = %0.2f)' % roc_auc)
     plt.plot(fpr2, tpr2, color='darkorange', lw=2, label='Slice curve (area = %0.2f)' % roc_auc2)
     #plt.plot(fpr3, tpr3, color='red', lw=2, label='Cut curve (area = %0.2f)' % roc_auc3)
     plt.plot([0, 0], [1, 1], color='navy', lw=2, linestyle='--')
@@ -196,6 +197,21 @@ def main():
     plt.clf()
     #plt.show()
     #raw_input()
+
+
+    ##check the outputs
+    canv = ROOT.TCanvas("test", "test", 800, 800)
+    grid_Xtest = []
+    for i in np.arange(-5, 5, 0.1):
+        for j in np.arange(-5, 5, 0.1):
+            grid_Xtest.append([i, j])
+    grid_Xtest = np.array(grid_Xtest)
+    grid_ytest = net2.predict(grid_Xtest)
+    hist_mass = ROOT.TH2F("j0m_j1m", ";j0 m;j1 m ", 50, -5, 5, 50, -5, 5)
+    for i in range(grid_Xtest.shape[0]):
+        hist_mass.Fill(grid_Xtest[i][0], grid_Xtest[i][1], grid_ytest[i])
+    hist_mass.Draw("colz")
+    canv.SaveAs("mHH.png")
 
     ###check the weights
     # yhat_0b = net.predict(X_0b)
